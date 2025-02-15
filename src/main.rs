@@ -28,6 +28,12 @@ lazy_static::lazy_static! {
     static ref ON_SPAWN_REGEX: Regex = Regex::new(r"Player Spawned: (?P<player>.+) xuid: (?P<xuid>\d+), pfid: (?P<pfid>.+)").unwrap();
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct Response {
+    command: String,
+    result: Vec<Player>,
+}
+
 #[derive(Debug, Clone)]
 struct PlayerInfo {
     name: String,
