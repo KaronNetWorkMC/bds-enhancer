@@ -131,7 +131,7 @@ fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
     }
 }
 
-fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &mut CommandStatus, cache: &mut cache) {
+fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &mut CommandStatus, cache: &mut PlayerCache) {
     match action {
         Action::Transfer(arg) => execute_command(
             child_stdin,
