@@ -116,7 +116,8 @@ fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
 
         if let Ok(parsed) = serde_json::from_str::<Value>(log_after_prefix) {
             if parsed["command"] == "listd" {
-                let players = parsed["result"].as_array().unwrap_or(&vec![]);
+                let empty_vec = vec![]; // 一時的なvecを変数に束縛
+                let players = parsed["result"].as_array().unwrap_or(&empty_vec);
 
                 for player in players {
                     let name = player["name"].as_str().unwrap_or("");
@@ -159,14 +160,6 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
                 execute_command(
                     child_stdin,
                     format!("scriptevent system:playerinfo {}", json_data),
-                );
-            } else {
-                let error_data = serde_json::json!({
-                    "error": format!("Player not found: {}", arg)
-                }).to_string();
-                execute_command(
-                    child_stdin,
-                    format!("scriptevent system:playerinfo {}", error_data),
                 );
             }
         }
@@ -264,7 +257,7 @@ fn handle_child_stdout(
 
     for log in logs {
         if let Some(action) = parse_action(&log) {
-            handle_action(&child_stdin, action, &mut command_status);
+            handle_action(&child_stdin, action, &mut command_status. &mut cache );
             continue;
         }
 
