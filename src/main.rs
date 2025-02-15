@@ -131,7 +131,7 @@ fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
     }
 }
 
-fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &mut CommandStatus) {
+fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &mut CommandStatus, cache: &mut PlayerCache) {
     match action {
         Action::Transfer(arg) => execute_command(
             child_stdin,
@@ -151,7 +151,7 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
             execute_command(child_stdin, arg.command.to_string());
         }
         Action::GetPlayer(arg) => {
-            if let Some(player) = response.get_player(&arg) {
+            if let Some(player) = cache.get_player_info(&arg) {
                 let json_data = serde_json::json!({
                     "name": player.name,
                     "deviceId": player.deviceSessionId,
