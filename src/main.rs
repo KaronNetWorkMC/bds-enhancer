@@ -33,7 +33,7 @@ struct Player {
     deviceSessionId: String,
     name: String,
     xuid: String,
-    id: i64,
+    id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,7 +47,7 @@ struct PlayerInfo {
     name: String,
     device_id: String,
     xuid: String,
-    id: i64,
+    id: String,
 }
 
 struct PlayerCache {
@@ -61,7 +61,7 @@ impl PlayerCache {
         }
     }
 
-    fn add_player(&mut self, name: &str, device_id: &str, xuid: &str, id: &i64) {
+    fn add_player(&mut self, name: &str, device_id: &str, xuid: &str, id: &str) {
         let player_info = PlayerInfo {
             name: name.to_string(),
             device_id: device_id.to_string(),
@@ -126,9 +126,7 @@ fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
                         let name = player["name"].as_str().unwrap_or("");
                         let device_id = player["deviceSessionId"].as_str().unwrap_or("");
                         let xuid = player["xuid"].as_str().unwrap_or("");
-                        let id = player["id"].as_str().unwrap_or("")
-                            .parse::<i64>()
-                            .unwrap_or(0);  // 変換に失敗した場合は0を使う
+                        let id = player["id"].as_str().unwrap_or("");
                         cache.add_player(name, device_id, xuid, &id);
                     }
                 }
@@ -228,7 +226,7 @@ fn get_player_info_and_send(name: &str, cache: &mut PlayerCache, child_stdin: &S
     }
 }
 
-fn send_to_scriptevent(player: &str, xuid: &str, device_id: &str, id: &i64, child_stdin: &Sender<String>) {
+fn send_to_scriptevent(player: &str, xuid: &str, device_id: &str, id: &str, child_stdin: &Sender<String>) {
     // プレイヤー情報を scriptevent コマンドとして送信
     let command = format!("scriptevent system:playerinfo {{\"name\":\"{}\",\"xuid\": {},\"deviceId\":{},\"id\":{}}}", player, xuid, device_id, id);
     execute_command(child_stdin, command);
