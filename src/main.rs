@@ -20,12 +20,21 @@ use log_level::LogLevel;
 use stream::LogDelimiterStream;
 use std::collections::HashMap;
 use serde_json::Value;
+use serde::{Deserialize, Serialize};
 
 lazy_static::lazy_static! {
     static ref ACTION_MESSAGE_REGEX: Regex = Regex::new(r".*\[Scripting\] bds_enhancer:(?P<json>\{.*\})").unwrap();
     static ref LOG_REGEX: Regex = Regex::new(&format!(r"{} (?P<level>(INFO|WARN|ERROR))\] ", LOG_PREFIX)).unwrap();
     static ref ON_JOIN_REGEX: Regex = Regex::new(r"Player connected: (?P<player>.+), xuid: (?P<xuid>\d+)").unwrap();
     static ref ON_SPAWN_REGEX: Regex = Regex::new(r"Player Spawned: (?P<player>.+) xuid: (?P<xuid>\d+), pfid: (?P<pfid>.+)").unwrap();
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Player {
+    deviceSessionId: String,
+    name: String,
+    xuid: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
