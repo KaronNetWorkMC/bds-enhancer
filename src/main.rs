@@ -65,10 +65,12 @@ impl PlayerCache {
             device_id: device_id.to_string(),
             xuid: xuid.to_string(),
         };
+        println!("(ログ追加): {} デバイスID: {} XUID: {}", name, device_id, xuid);
         self.players.insert(name.to_string(), player_info);
     }
 
     fn get_player_info(&self, name: &str) -> Option<&PlayerInfo> {
+        println!("ok10");
         self.players.get(name)
     }
 }
@@ -110,11 +112,14 @@ fn parse_action(log: &str) -> Option<Action> {
 }
 
 fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
+    println!("ok-1");
     for line in log.lines() {
+        println!("ok0");
         if line.contains("###*") {
+            println!("ok1");
             // ###* を含む行が見つかった場合、その行を処理する
             let log_after_prefix = &line[line.find("###*").unwrap() + 4..];
-
+            println!("ok2");
             if let Ok(parsed) = serde_json::from_str::<Value>(log_after_prefix) {
                 if parsed["command"] == "listd" {
                     let empty_vec = vec![]; // 一時的なvecを変数に束縛
@@ -124,6 +129,7 @@ fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
                         let name = player["name"].as_str().unwrap_or("");
                         let device_id = player["deviceSessionId"].as_str().unwrap_or("");
                         let xuid = player["xuid"].as_str().unwrap_or("");
+                        println!("(ログ取得): {} デバイスID: {} XUID: {}", name, device_id, xuid);
 
                         cache.add_player(name, device_id, xuid);
                     }
@@ -155,12 +161,15 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
         }
         Action::GetPlayer(arg) => {
             // arg.name からプレイヤー名を取得して、cache でプレイヤー情報を取得
+            println!("pget r Receive");
+
             if let Some(player) = cache.get_player_info(&arg.name) {
                 let json_data = serde_json::json!({
                     "name": player.name,
                     "deviceId": player.device_id,
                     "xuid": player.xuid
                 }).to_string();
+                println!("pfound");
                 execute_command(child_stdin, format!("scriptevent system:playerinfo {}", json_data));
             }
         }
