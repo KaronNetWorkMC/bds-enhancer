@@ -127,7 +127,7 @@ fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
                         let device_id = player["deviceSessionId"].as_str().unwrap_or("");
                         let xuid = player["xuid"].as_str().unwrap_or("");
                         let id = player["id"].as_i64().unwrap_or(0).to_string();
-                        cache.add_player(name, device_id, xuid, id);
+                        cache.add_player(name, device_id, xuid, &id);
                     }
                 }
             }
