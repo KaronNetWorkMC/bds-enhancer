@@ -29,7 +29,6 @@ lazy_static::lazy_static! {
     static ref ON_SPAWN_REGEX: Regex = Regex::new(r"Player Spawned: (?P<player>.+) xuid: (?P<xuid>\d+), pfid: (?P<pfid>.+)").unwrap();
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 struct Player {
     deviceSessionId: String,
@@ -50,13 +49,19 @@ struct PlayerInfo {
     xuid: String,
 }
 
+struct PlayerCache {
+    players: HashMap<String, PlayerInfo>, // プレイヤー名をキーにして情報を格納
+}
+
 impl PlayerCache {
+    // PlayerCacheのインスタンスを作成
     fn new() -> Self {
         PlayerCache {
             players: HashMap::new(),
         }
     }
 
+    // プレイヤーを追加
     fn add_player(&mut self, name: &str, device_id: &str, xuid: &str) {
         let player_info = PlayerInfo {
             name: name.to_string(),
@@ -66,14 +71,19 @@ impl PlayerCache {
         self.players.insert(name.to_string(), player_info);
     }
 
-    fn get_player_info(&self, name: &GetPlayerPayload) -> Option<&PlayerInfo> {
+    // プレイヤー名で情報を取得
+    fn get_player_info(&self, name: &str) -> Option<&PlayerInfo> {
         self.players.get(name)
     }
 }
 
-struct PlayerCache {
-    players: HashMap<String, PlayerInfo>, // プレイヤー名をキーにして情報を格納
+// GetPlayerPayloadの構造体
+#[derive(Debug, Deserialize)]
+pub struct GetPlayerPayload {
+    pub name: String,
 }
+
+let mut cache = PlayerCache::new();
 
 fn handle_child_stdin(rx: Receiver<String>, mut child_stdin: ChildStdin) {
     loop {
@@ -132,7 +142,7 @@ fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
     }
 }
 
-fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &mut CommandStatus, cache: &mut PlayerCache) {
+fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &mut CommandStatus, cache: &mut cache) {
     match action {
         Action::Transfer(arg) => execute_command(
             child_stdin,
@@ -214,7 +224,7 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
     }
 }
 
-fn get_player_info_and_send(name: &str, cache: &PlayerCache, child_stdin: &Sender<String>) {
+fn get_player_info_and_send(name: &str, cache: mut cache, child_stdin: &Sender<String>) {
     if let Some(player_info) = cache.get_player_info(name) {
         // プレイヤー情報を scriptevent コマンドで送信
         send_to_scriptevent(&player_info.name, &player_info.xuid, &player_info.device_id, child_stdin);
@@ -258,7 +268,7 @@ fn handle_child_stdout(
 
     for log in logs {
         if let Some(action) = parse_action(&log) {
-            handle_action(&child_stdin, action, &mut command_status, &mut PlayerCache );
+            handle_action(&child_stdin, action, &mut command_status, &mut cache );
             continue;
         }
 
