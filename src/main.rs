@@ -33,6 +33,7 @@ struct Player {
     deviceSessionId: String,
     name: String,
     xuid: String,
+    id: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,6 +47,7 @@ struct PlayerInfo {
     name: String,
     device_id: String,
     xuid: String,
+    id: i32,
 }
 
 struct PlayerCache {
@@ -59,18 +61,17 @@ impl PlayerCache {
         }
     }
 
-    fn add_player(&mut self, name: &str, device_id: &str, xuid: &str) {
+    fn add_player(&mut self, name: &str, device_id: &str, xuid: &str, id: &i32) {
         let player_info = PlayerInfo {
             name: name.to_string(),
             device_id: device_id.to_string(),
             xuid: xuid.to_string(),
+            id: id,
         };
-        println!("(ログ追加): {} デバイスID: {} XUID: {}", name, device_id, xuid);
         self.players.insert(name.to_string(), player_info);
     }
 
     fn get_player_info(&self, name: &str) -> Option<&PlayerInfo> {
-        println!("ok10");
         self.players.get(name)
     }
 }
@@ -112,14 +113,10 @@ fn parse_action(log: &str) -> Option<Action> {
 }
 
 fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
-    println!("ok-1");
     for line in log.lines() {
-        println!("ok0");
         if line.contains("###*") {
-            println!("ok1");
             // ###* を含む行が見つかった場合、その行を処理する
             let log_after_prefix = &line[line.find("###*").unwrap() + 4..];
-            println!("ok2");
             if let Ok(parsed) = serde_json::from_str::<Value>(log_after_prefix) {
                 if parsed["command"] == "listd" {
                     let empty_vec = vec![]; // 一時的なvecを変数に束縛
@@ -129,9 +126,10 @@ fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
                         let name = player["name"].as_str().unwrap_or("");
                         let device_id = player["deviceSessionId"].as_str().unwrap_or("");
                         let xuid = player["xuid"].as_str().unwrap_or("");
-                        println!("(ログ取得): {} デバイスID: {} XUID: {}", name, device_id, xuid);
-
-                        cache.add_player(name, device_id, xuid);
+                        let id = player["id"].as_str().unwrap_or("")
+                            .parse::<i32>()
+                            .unwrap_or(0);  // 変換に失敗した場合は0を使う
+                        cache.add_player(name, device_id, xuid, id);
                     }
                 }
             }
@@ -161,15 +159,13 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
         }
         Action::GetPlayer(arg) => {
             // arg.name からプレイヤー名を取得して、cache でプレイヤー情報を取得
-            println!("pget r Receive");
-
             if let Some(player) = cache.get_player_info(&arg.name) {
                 let json_data = serde_json::json!({
                     "name": player.name,
                     "deviceId": player.device_id,
-                    "xuid": player.xuid
+                    "xuid": player.xuid,
+                    "id": player.id,
                 }).to_string();
-                println!("pfound");
                 execute_command(child_stdin, format!("scriptevent system:playerinfo {}", json_data));
             }
         }
@@ -226,15 +222,15 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
 fn get_player_info_and_send(name: &str, cache: &mut PlayerCache, child_stdin: &Sender<String>) {
     if let Some(player_info) = cache.get_player_info(name) {
         // プレイヤー情報を scriptevent コマンドで送信
-        send_to_scriptevent(&player_info.name, &player_info.xuid, &player_info.device_id, child_stdin);
+        send_to_scriptevent(&player_info.name, &player_info.xuid, &player_info.device_id, &player_info.id, child_stdin);
     } else {
         println!("Player not found: {}", name);
     }
 }
 
-fn send_to_scriptevent(player: &str, xuid: &str, device_id: &str, child_stdin: &Sender<String>) {
+fn send_to_scriptevent(player: &str, xuid: &str, device_id: &str, id: &i32, child_stdin: &Sender<String>) {
     // プレイヤー情報を scriptevent コマンドとして送信
-    let command = format!("scriptevent system:playerinfo {{\"name\":\"{}\",\"xuid\": {},\"deviceId\":{}}}", player, xuid, device_id);
+    let command = format!("scriptevent system:playerinfo {{\"name\":\"{}\",\"xuid\": {},\"deviceId\":{}}\"id\":{}}}", player, xuid, device_id, id);
     execute_command(child_stdin, command);
 }
 
