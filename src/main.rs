@@ -18,12 +18,45 @@ use color::Color;
 use consts::LOG_PREFIX;
 use log_level::LogLevel;
 use stream::LogDelimiterStream;
+use std::collections::HashMap;
 
 lazy_static::lazy_static! {
     static ref ACTION_MESSAGE_REGEX: Regex = Regex::new(r".*\[Scripting\] bds_enhancer:(?P<json>\{.*\})").unwrap();
     static ref LOG_REGEX: Regex = Regex::new(&format!(r"{} (?P<level>(INFO|WARN|ERROR))\] ", LOG_PREFIX)).unwrap();
     static ref ON_JOIN_REGEX: Regex = Regex::new(r"Player connected: (?P<player>.+), xuid: (?P<xuid>\d+)").unwrap();
     static ref ON_SPAWN_REGEX: Regex = Regex::new(r"Player Spawned: (?P<player>.+) xuid: (?P<xuid>\d+), pfid: (?P<pfid>.+)").unwrap();
+}
+
+#[derive(Debug, Clone)]
+struct PlayerInfo {
+    name: String,
+    device_id: String,
+    xuid: String,
+}
+
+struct PlayerCache {
+    players: HashMap<String, PlayerInfo>, // プレイヤー名をキーにして情報を格納
+}
+
+impl PlayerCache {
+    fn new() -> Self {
+        PlayerCache {
+            players: HashMap::new(),
+        }
+    }
+
+    fn add_player(&mut self, name: &str, device_id: &str, xuid: &str) {
+        let player_info = PlayerInfo {
+            name: name.to_string(),
+            device_id: device_id.to_string(),
+            xuid: xuid.to_string(),
+        };
+        self.players.insert(name.to_string(), player_info);
+    }
+
+    fn get_player_info(&self, name: &str) -> Option<&PlayerInfo> {
+        self.players.get(name)
+    }
 }
 
 fn handle_child_stdin(rx: Receiver<String>, mut child_stdin: ChildStdin) {
@@ -62,6 +95,26 @@ fn parse_action(log: &str) -> Option<Action> {
     serde_json::from_str(json).ok()?
 }
 
+fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
+    if let Some(index) = log.find("*###") {
+        let log_after_prefix = &log[index + 4..];
+
+        if let Ok(parsed) = serde_json::from_str::<Value>(log_after_prefix) {
+            if parsed["command"] == "listd" {
+                let players = parsed["result"].as_array().unwrap_or(&vec![]);
+
+                for player in players {
+                    let name = player["name"].as_str().unwrap_or("");
+                    let device_id = player["deviceSessionId"].as_str().unwrap_or("");
+                    let xuid = player["xuid"].as_str().unwrap_or("");
+
+                    cache.add_player(name, device_id, xuid);
+                }
+            }
+        }
+    }
+}
+
 fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &mut CommandStatus) {
     match action {
         Action::Transfer(arg) => execute_command(
@@ -80,6 +133,27 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
                 command_status.scriptevent = "bds_enhancer:result".to_string();
             }
             execute_command(child_stdin, arg.command.to_string());
+        }
+        Action::GetPlayer(arg) => {
+            if let Some(player) = response.get_player(&arg) {
+                let json_data = serde_json::json!({
+                    "name": player.name,
+                    "deviceId": player.deviceSessionId,
+                    "xuid": player.xuid
+                }).to_string();
+                execute_command(
+                    child_stdin,
+                    format!("scriptevent system:playerinfo {}", json_data),
+                );
+            } else {
+                let error_data = serde_json::json!({
+                    "error": format!("Player not found: {}", arg)
+                }).to_string();
+                execute_command(
+                    child_stdin,
+                    format!("scriptevent system:playerinfo {}", error_data),
+                );
+            }
         }
         Action::ExecuteShell(arg) => {
             let result = execute_shell_command(&arg.main_command.clone(), arg.args.clone());
@@ -129,6 +203,21 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
             }
         }
     }
+}
+
+fn get_player_info_and_send(name: &str, cache: &PlayerCache, child_stdin: &mut ChildStdin) {
+    if let Some(player_info) = cache.get_player_info(name) {
+        // プレイヤー情報を scriptevent コマンドで送信
+        send_to_scriptevent(&player_info.name, &player_info.xuid, &player_info.device_id, child_stdin);
+    } else {
+        println!("Player not found: {}", name);
+    }
+}
+
+fn send_to_scriptevent(player: &str, xuid: &str, device_id: &str, child_stdin: &mut ChildStdin) {
+    // プレイヤー情報を scriptevent コマンドとして送信
+    let command = format!("scriptevent system:playerinfo {{\"name\":\"{}\",\"xuid\": {},\"deviceId\":{}}}", player, xuid, device_id);
+    execute_command(child_stdin, command);
 }
 
 fn custom_handler(log: &str, child_stdin: &Sender<String>) {
