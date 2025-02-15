@@ -50,10 +50,6 @@ struct PlayerInfo {
     xuid: String,
 }
 
-struct PlayerCache {
-    players: HashMap<String, PlayerInfo>, // プレイヤー名をキーにして情報を格納
-}
-
 impl PlayerCache {
     fn new() -> Self {
         PlayerCache {
@@ -73,6 +69,10 @@ impl PlayerCache {
     fn get_player_info(&self, name: &GetPlayerPayload) -> Option<&PlayerInfo> {
         self.players.get(name)
     }
+}
+
+struct PlayerCache {
+    players: HashMap<String, PlayerInfo>, // プレイヤー名をキーにして情報を格納
 }
 
 fn handle_child_stdin(rx: Receiver<String>, mut child_stdin: ChildStdin) {
