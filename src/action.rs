@@ -25,7 +25,7 @@ pub struct KickByIdPayload {
     pub reason: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Hash, Eq, PartialEq)]
 pub struct GetPlayerPayload {
     pub name: String,
 }
