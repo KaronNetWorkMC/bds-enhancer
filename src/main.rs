@@ -20,6 +20,7 @@ use stream::LogDelimiterStream;
 use std::collections::HashMap;
 use serde_json::Value;
 use serde::{Deserialize, Serialize};
+use crate::action::GetPlayerPayload;
 
 lazy_static::lazy_static! {
     static ref ACTION_MESSAGE_REGEX: Regex = Regex::new(r".*\[Scripting\] bds_enhancer:(?P<json>\{.*\})").unwrap();
@@ -257,7 +258,7 @@ fn handle_child_stdout(
 
     for log in logs {
         if let Some(action) = parse_action(&log) {
-            handle_action(&child_stdin, action, &mut command_status, &mut cache );
+            handle_action(&child_stdin, action, &mut command_status, &mut PlayerCache );
             continue;
         }
 
