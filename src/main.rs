@@ -19,6 +19,7 @@ use consts::LOG_PREFIX;
 use log_level::LogLevel;
 use stream::LogDelimiterStream;
 use std::collections::HashMap;
+use serde_json::Value;
 
 lazy_static::lazy_static! {
     static ref ACTION_MESSAGE_REGEX: Regex = Regex::new(r".*\[Scripting\] bds_enhancer:(?P<json>\{.*\})").unwrap();
