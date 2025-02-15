@@ -20,7 +20,6 @@ use stream::LogDelimiterStream;
 use std::collections::HashMap;
 use serde_json::Value;
 use serde::{Deserialize, Serialize};
-use crate::action::GetPlayerPayload;
 
 lazy_static::lazy_static! {
     static ref ACTION_MESSAGE_REGEX: Regex = Regex::new(r".*\[Scripting\] bds_enhancer:(?P<json>\{.*\})").unwrap();
