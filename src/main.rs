@@ -50,18 +50,16 @@ struct PlayerInfo {
 }
 
 struct PlayerCache {
-    players: HashMap<String, PlayerInfo>, // プレイヤー名をキーにして情報を格納
+    players: HashMap<String, PlayerInfo>,
 }
 
 impl PlayerCache {
-    // PlayerCacheのインスタンスを作成
     fn new() -> Self {
         PlayerCache {
             players: HashMap::new(),
         }
     }
 
-    // プレイヤーを追加
     fn add_player(&mut self, name: &str, device_id: &str, xuid: &str) {
         let player_info = PlayerInfo {
             name: name.to_string(),
@@ -71,7 +69,6 @@ impl PlayerCache {
         self.players.insert(name.to_string(), player_info);
     }
 
-    // プレイヤー名で情報を取得
     fn get_player_info(&self, name: &str) -> Option<&PlayerInfo> {
         self.players.get(name)
     }
@@ -358,7 +355,8 @@ fn main() {
         command: "".to_string(),
         scriptevent: "".to_string(),
     };
-    handle_child_stdout(tx2, stdout, &mut command_status);
+    let mut cache = PlayerCache::new();
+    handle_child_stdout(tx2, stdout, &mut command_status, &mut cache);
 }
 
 struct CommandStatus {
