@@ -80,8 +80,6 @@ pub struct GetPlayerPayload {
     pub name: String,
 }
 
-let mut cache = PlayerCache::new();
-
 fn handle_child_stdin(rx: Receiver<String>, mut child_stdin: ChildStdin) {
     loop {
         let input = rx.recv().unwrap();
