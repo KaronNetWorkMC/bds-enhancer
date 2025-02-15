@@ -297,7 +297,7 @@ fn handle_child_stdout(
         }
         let _ = stdout.write(format!("{}{}{}\n", level.to_color(), log, Color::Reset).as_bytes());
 
-        handle_listd_log(log, &mut cache)
+        handle_listd_log(log, &mut cache);
         custom_handler(log, &child_stdin);
     }
 }
