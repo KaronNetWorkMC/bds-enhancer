@@ -74,12 +74,6 @@ impl PlayerCache {
     }
 }
 
-// GetPlayerPayloadの構造体
-#[derive(Debug, Deserialize)]
-pub struct GetPlayerPayload {
-    pub name: String,
-}
-
 fn handle_child_stdin(rx: Receiver<String>, mut child_stdin: ChildStdin) {
     loop {
         let input = rx.recv().unwrap();
@@ -219,7 +213,7 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
     }
 }
 
-fn get_player_info_and_send(name: &str, cache: mut cache, child_stdin: &Sender<String>) {
+fn get_player_info_and_send(name: &str, cache: &mut PlayerCache, child_stdin: &Sender<String>) {
     if let Some(player_info) = cache.get_player_info(name) {
         // プレイヤー情報を scriptevent コマンドで送信
         send_to_scriptevent(&player_info.name, &player_info.xuid, &player_info.device_id, child_stdin);
@@ -257,6 +251,7 @@ fn handle_child_stdout(
     child_stdin: Sender<String>,
     child_stdout: ChildStdout,
     mut command_status: &mut CommandStatus,
+    mut cache: &mut PlayerCache,
 ) {
     let logs = LogDelimiterStream::new(child_stdout);
     let mut stdout = std::io::stdout();
