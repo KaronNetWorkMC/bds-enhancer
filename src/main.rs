@@ -150,16 +150,14 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
             execute_command(child_stdin, arg.command.to_string());
         }
         Action::GetPlayer(arg) => {
-            if let Some(player) = cache.get_player_info(&arg) {
+            // arg.name からプレイヤー名を取得して、cache でプレイヤー情報を取得
+            if let Some(player) = cache.get_player_info(&arg.name) {
                 let json_data = serde_json::json!({
                     "name": player.name,
                     "deviceId": player.device_id,
                     "xuid": player.xuid
                 }).to_string();
-                execute_command(
-                    child_stdin,
-                    format!("scriptevent system:playerinfo {}", json_data),
-                );
+                execute_command(child_stdin, format!("scriptevent system:playerinfo {}", json_data));
             }
         }
         Action::ExecuteShell(arg) => {
