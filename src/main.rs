@@ -110,25 +110,29 @@ fn parse_action(log: &str) -> Option<Action> {
 }
 
 fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
-    if let Some(index) = log.find("*###") {
-        let log_after_prefix = &log[index + 4..];
+    for line in log.lines() {
+        if line.contains("###*") {
+            // ###* を含む行が見つかった場合、その行を処理する
+            let log_after_prefix = &line[line.find("###*").unwrap() + 4..];
 
-        if let Ok(parsed) = serde_json::from_str::<Value>(log_after_prefix) {
-            if parsed["command"] == "listd" {
-                let empty_vec = vec![]; // 一時的なvecを変数に束縛
-                let players = parsed["result"].as_array().unwrap_or(&empty_vec);
+            if let Ok(parsed) = serde_json::from_str::<Value>(log_after_prefix) {
+                if parsed["command"] == "listd" {
+                    let empty_vec = vec![]; // 一時的なvecを変数に束縛
+                    let players = parsed["result"].as_array().unwrap_or(&empty_vec);
 
-                for player in players {
-                    let name = player["name"].as_str().unwrap_or("");
-                    let device_id = player["deviceSessionId"].as_str().unwrap_or("");
-                    let xuid = player["xuid"].as_str().unwrap_or("");
+                    for player in players {
+                        let name = player["name"].as_str().unwrap_or("");
+                        let device_id = player["deviceSessionId"].as_str().unwrap_or("");
+                        let xuid = player["xuid"].as_str().unwrap_or("");
 
-                    cache.add_player(name, device_id, xuid);
+                        cache.add_player(name, device_id, xuid);
+                    }
                 }
             }
         }
     }
 }
+
 
 fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &mut CommandStatus, cache: &mut PlayerCache) {
     match action {
