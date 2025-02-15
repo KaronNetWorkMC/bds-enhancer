@@ -12,7 +12,6 @@ use std::path::Path;
 use std::process::{ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
-
 use action::Action;
 use color::Color;
 use consts::LOG_PREFIX;
@@ -154,7 +153,7 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
             if let Some(player) = cache.get_player_info(&arg) {
                 let json_data = serde_json::json!({
                     "name": player.name,
-                    "deviceId": player.deviceSessionId,
+                    "deviceId": player.device_id,
                     "xuid": player.xuid
                 }).to_string();
                 execute_command(
