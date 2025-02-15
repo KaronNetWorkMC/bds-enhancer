@@ -69,7 +69,7 @@ impl PlayerCache {
         self.players.insert(name.to_string(), player_info);
     }
 
-    fn get_player_info(&self, name: &str) -> Option<&PlayerInfo> {
+    fn get_player_info(&self, name: &GetPlayerPayload) -> Option<&PlayerInfo> {
         self.players.get(name)
     }
 }
@@ -213,7 +213,7 @@ fn handle_action(child_stdin: &Sender<String>, action: Action, command_status: &
     }
 }
 
-fn get_player_info_and_send(name: &str, cache: &PlayerCache, child_stdin: &mut ChildStdin) {
+fn get_player_info_and_send(name: &str, cache: &PlayerCache, child_stdin: &Sender<String>) {
     if let Some(player_info) = cache.get_player_info(name) {
         // プレイヤー情報を scriptevent コマンドで送信
         send_to_scriptevent(&player_info.name, &player_info.xuid, &player_info.device_id, child_stdin);
@@ -222,7 +222,7 @@ fn get_player_info_and_send(name: &str, cache: &PlayerCache, child_stdin: &mut C
     }
 }
 
-fn send_to_scriptevent(player: &str, xuid: &str, device_id: &str, child_stdin: &mut ChildStdin) {
+fn send_to_scriptevent(player: &str, xuid: &str, device_id: &str, child_stdin: &Sender<String>) {
     // プレイヤー情報を scriptevent コマンドとして送信
     let command = format!("scriptevent system:playerinfo {{\"name\":\"{}\",\"xuid\": {},\"deviceId\":{}}}", player, xuid, device_id);
     execute_command(child_stdin, command);
@@ -257,7 +257,7 @@ fn handle_child_stdout(
 
     for log in logs {
         if let Some(action) = parse_action(&log) {
-            handle_action(&child_stdin, action, &mut command_status. &mut cache );
+            handle_action(&child_stdin, action, &mut command_status, &mut cache );
             continue;
         }
 
