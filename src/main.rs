@@ -66,7 +66,7 @@ impl PlayerCache {
             name: name.to_string(),
             device_id: device_id.to_string(),
             xuid: xuid.to_string(),
-            id: *id,
+            id: id.to_string(),
         };
         self.players.insert(name.to_string(), player_info);
     }
