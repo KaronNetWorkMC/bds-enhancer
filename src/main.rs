@@ -66,7 +66,7 @@ impl PlayerCache {
             name: name.to_string(),
             device_id: device_id.to_string(),
             xuid: xuid.to_string(),
-            id: id,
+            id: *id,
         };
         self.players.insert(name.to_string(), player_info);
     }
@@ -129,7 +129,7 @@ fn handle_listd_log(log: &str, cache: &mut PlayerCache) {
                         let id = player["id"].as_str().unwrap_or("")
                             .parse::<i32>()
                             .unwrap_or(0);  // 変換に失敗した場合は0を使う
-                        cache.add_player(name, device_id, xuid, id);
+                        cache.add_player(name, device_id, xuid, &id);
                     }
                 }
             }
@@ -230,7 +230,7 @@ fn get_player_info_and_send(name: &str, cache: &mut PlayerCache, child_stdin: &S
 
 fn send_to_scriptevent(player: &str, xuid: &str, device_id: &str, id: &i32, child_stdin: &Sender<String>) {
     // プレイヤー情報を scriptevent コマンドとして送信
-    let command = format!("scriptevent system:playerinfo {{\"name\":\"{}\",\"xuid\": {},\"deviceId\":{}}\"id\":{}}}", player, xuid, device_id, id);
+    let command = format!("scriptevent system:playerinfo {{\"name\":\"{}\",\"xuid\": {},\"deviceId\":{},\"id\":{}}}", player, xuid, device_id, id);
     execute_command(child_stdin, command);
 }
 
