@@ -333,7 +333,7 @@ fn build_command(os: &str, cwd: &str, executable_name: &str) -> Command {
 fn main() {
     let os = env::consts::OS;
     let cwd = env::args().nth(1).unwrap_or(".".to_string());
-    let executable_name = env::args().nth(2).unwrap_or("bedrock_server".to_string());
+    let executable_name = env::args().nth(2).unwrap_or("bedrock_server_exe".to_string());
 
     let mut child = build_command(os, &cwd, &executable_name)
         .spawn()
