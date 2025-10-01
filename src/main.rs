@@ -25,7 +25,7 @@ lazy_static::lazy_static! {
     static ref ACTION_MESSAGE_REGEX: Regex = Regex::new(r".*\[Scripting\] bds_enhancer:(?P<json>\{.*\})").unwrap();
     static ref LOG_REGEX: Regex = Regex::new(&format!(r"{} (?P<level>(INFO|WARN|ERROR))\] ", LOG_PREFIX)).unwrap();
     static ref ON_JOIN_REGEX: Regex = Regex::new(r"Player connected: (?P<player>.+), xuid: (?P<xuid>\d+)").unwrap();
-    static ref ON_SPAWN_REGEX: Regex = Regex::new(r"Player Spawned: (?P<player>.+) xuid: (?P<xuid>\d+), pfid: (?P<pfid>.+)").unwrap();
+    static ref ON_SPAWN_REGEX: Regex = Regex::new(r"Player Spawned: (?P<player>.+) xuid: (?P<xuid>\d+)").unwrap();
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -243,10 +243,9 @@ fn custom_handler(log: &str, child_stdin: &Sender<String>) {
     } else if let Some(caps) = ON_SPAWN_REGEX.captures(log) {
         let player = caps.name("player").unwrap().as_str();
         let xuid = caps.name("xuid").unwrap().as_str();
-        let pfid = caps.name("pfid").unwrap().as_str();
         execute_command(
             child_stdin,
-            format!("scriptevent system:on_spawn {}|{}|{}", player, xuid, pfid),
+            format!("scriptevent system:on_spawn {}|{}", player, xuid),
         );
     }
 }
